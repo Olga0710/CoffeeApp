@@ -4,7 +4,7 @@ const db = require('../models/db');
 exports.getAllShops = async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM shops ORDER BY id ASC');
-        res.render('shops/index', { shops: result.rows });
+        res.render('shops/list', { shops: result.rows });
     } catch (err) {
         console.error(err);
         res.status(500).send("Помилка сервера при отриманні списку: " + err.message);
