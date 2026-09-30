@@ -1,6 +1,6 @@
 const db = require('../models/db');
 
-// Отримати список усіх кав'ярень (Read)
+
 exports.getAllShops = async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM shops ORDER BY id ASC');
@@ -11,7 +11,6 @@ exports.getAllShops = async (req, res) => {
     }
 };
 
-// Форма створення кав'ярні
 exports.getCreateShopForm = async (req, res) => {
     try {
         res.render('shops/create');
@@ -21,7 +20,7 @@ exports.getCreateShopForm = async (req, res) => {
     }
 };
 
-// Створити кав'ярню (Create)
+
 exports.createShop = async (req, res) => {
     const { name, description, address, opening_hours, image_url } = req.body;
     try {
@@ -36,7 +35,6 @@ exports.createShop = async (req, res) => {
     }
 };
 
-// Форма редагування кав'ярні
 exports.getEditShopForm = async (req, res) => {
     const shopId = req.params.id;
     try {
@@ -50,7 +48,6 @@ exports.getEditShopForm = async (req, res) => {
     }
 };
 
-// Оновити кав'ярню (Update)
 exports.updateShop = async (req, res) => {
     const shopId = req.params.id;
     const { name, description, address, opening_hours, image_url } = req.body;
@@ -66,7 +63,6 @@ exports.updateShop = async (req, res) => {
     }
 };
 
-// Видалити кав'ярню (Delete)
 exports.deleteShop = async (req, res) => {
     const shopId = req.params.id;
     try {
@@ -77,3 +73,5 @@ exports.deleteShop = async (req, res) => {
         res.status(500).send("Помилка при видаленні: " + err.message);
     }
 };
+
+

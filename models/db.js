@@ -1,7 +1,6 @@
 const { Pool } = require('pg');
 
 const isDockerLocal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes('@db:');
-
 const poolConfig = {
     connectionString: process.env.DATABASE_URL,
 };
@@ -14,11 +13,13 @@ if (!isDockerLocal) {
 
 const pool = new Pool(poolConfig);
 
-// Виправлено: використано бектіки та правильний синтаксис шаблону
 console.log(`Підключення до PostgreSQL ініціалізовано (${isDockerLocal ? 'Local / Docker' : 'Production / Render'}).`);
 
 const initDb = async () => {
     try {
+       
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
         await pool.query(`
             CREATE TABLE IF NOT EXISTS shops (
                 id SERIAL PRIMARY KEY,
@@ -29,6 +30,9 @@ const initDb = async () => {
                 image_url TEXT
             )
         `);
+
+        await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS opening_hours TEXT;`);
+        await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS image_url TEXT;`);
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS categories (
@@ -55,9 +59,10 @@ const initDb = async () => {
 
         console.log('Таблиці успішно створені або вже існують у PostgreSQL.');
     } catch (err) {
-        console.error('Помилка створення таблиць у БД:', err);
+        console.error('ПОМИЛКА створення таблиць у БД:', err);
     }
 };
+
 
 initDb();
 

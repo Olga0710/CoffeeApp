@@ -1,6 +1,6 @@
 const db = require('../models/db');
 
-// Переглянути меню кав'ярні (з урахуванням категорії та кав'ярні)
+
 exports.getShopMenu = async (req, res) => {
     const shopId = req.params.shopId;
     try {
@@ -15,14 +15,13 @@ exports.getShopMenu = async (req, res) => {
 
         const menuResult = await db.query('SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id DESC', [shopId]);
 
-        res.render('shops/menu', { shop, categories, menuItems: menuResult.rows });
+        res.render('menu/list', { shop, categories, menuItems: menuResult.rows });
     } catch (err) {
         console.error(err);
         res.status(500).send("Помилка завантаження меню: " + err.message);
     }
 };
 
-// Додати нову позицію в меню (Create)
 exports.addMenuItem = async (req, res) => {
     const shopId = req.params.shopId;
     const { category_id, name, description, price, image_url } = req.body;
@@ -41,7 +40,6 @@ exports.addMenuItem = async (req, res) => {
     }
 };
 
-// Форма редагування позиції меню
 exports.getEditMenuItemForm = async (req, res) => {
     const { shopId, itemId } = req.params;
     try {
@@ -56,14 +54,13 @@ exports.getEditMenuItemForm = async (req, res) => {
         const item = itemResult.rows[0];
         if (!item) return res.status(404).send("Позицію меню не знайдено");
 
-        res.render('shops/edit-menu-item', { shop, categories, item });
+        res.render('menu/edit', { shop, categories, item });
     } catch (err) {
         console.error(err);
         res.status(500).send("Помилка сервера: " + err.message);
     }
 };
 
-// Оновлення позиції меню (Update)
 exports.updateMenuItem = async (req, res) => {
     const { shopId, itemId } = req.params;
     const { category_id, name, description, price, image_url } = req.body;
@@ -83,7 +80,6 @@ exports.updateMenuItem = async (req, res) => {
     }
 };
 
-// Видалення позиції меню (Delete)
 exports.deleteMenuItem = async (req, res) => {
     const { shopId, itemId } = req.params;
     try {
