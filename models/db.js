@@ -33,6 +33,7 @@ const initDb = async () => {
 
         await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS opening_hours TEXT;`);
         await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS image_url TEXT;`);
+        await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS category_id INTEGER;`);
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS categories (
