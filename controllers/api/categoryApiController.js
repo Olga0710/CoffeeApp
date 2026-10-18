@@ -1,20 +1,25 @@
 const db = require('../../models/db');
 
-// 1. GET: Отримати всі категорії певної кав'ярні
+// Отримати категорії конкретної кав'ярні (GET)
 exports.getShopCategories = async (req, res) => {
-    const { shopId } = req.params;
+    const shopId = req.params.shopId;
     try {
-        const result = await db.query('SELECT * FROM categories WHERE shop_id = $1 ORDER BY id ASC', [shopId]);
-        res.status(200).json(result.rows);
+        const shopResult = await db.query('SELECT * FROM shops WHERE id = $1', [shopId]);
+        if (shopResult.rows.length === 0) {
+            return res.status(404).json({ error: "Кав'ярню не знайдено" });
+        }
+
+        const categoriesResult = await db.query('SELECT * FROM categories WHERE shop_id = $1 ORDER BY id ASC', [shopId]);
+        res.status(200).json(categoriesResult.rows);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Помилка сервера" });
+        res.status(500).json({ error: "Помилка сервера при отриманні категорій", details: err.message });
     }
 };
 
-// 2. POST: Створити нову категорію для кав'ярні
+// Створити категорію для кав'ярні (POST)
 exports.createCategory = async (req, res) => {
-    const { shopId } = req.params;
+    const shopId = req.params.shopId;
     const { name } = req.body;
 
     if (!name) {
@@ -22,20 +27,25 @@ exports.createCategory = async (req, res) => {
     }
 
     try {
+        const shopResult = await db.query('SELECT * FROM shops WHERE id = $1', [shopId]);
+        if (shopResult.rows.length === 0) {
+            return res.status(404).json({ error: "Кав'ярню не знайдено" });
+        }
+
         const result = await db.query(
             'INSERT INTO categories (shop_id, name) VALUES ($1, $2) RETURNING *',
             [shopId, name]
         );
-        res.status(201).json({ message: "Категорію створено", category: result.rows[0] });
+        res.status(201).json({ message: "Категорію успішно створено", category: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Помилка при створенні категорії" });
+        res.status(500).json({ error: "Помилка при створенні категорії", details: err.message });
     }
 };
 
-// 3. PUT: Оновити категорію
+// Оновити категорію (PUT)
 exports.updateCategory = async (req, res) => {
-    const { id } = req.params;
+    const categoryId = req.params.id;
     const { name } = req.body;
 
     if (!name) {
@@ -43,35 +53,35 @@ exports.updateCategory = async (req, res) => {
     }
 
     try {
-        const check = await db.query('SELECT * FROM categories WHERE id = $1', [id]);
-        if (check.rows.length === 0) {
+        const result = await db.query(
+            'UPDATE categories SET name = $1 WHERE id = $2 RETURNING *',
+            [name, categoryId]
+        );
+
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: "Категорію не знайдено" });
         }
 
-        const result = await db.query(
-            'UPDATE categories SET name = $1 WHERE id = $2 RETURNING *',
-            [name, id]
-        );
         res.status(200).json({ message: "Категорію оновлено", category: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Помилка при оновленні" });
+        res.status(500).json({ error: "Помилка при оновленні категорії", details: err.message });
     }
 };
 
-// 4. DELETE: Видалити категорію
+// Видалити категорію (DELETE)
 exports.deleteCategory = async (req, res) => {
-    const { id } = req.params;
+    const categoryId = req.params.id;
     try {
-        const check = await db.query('SELECT * FROM categories WHERE id = $1', [id]);
-        if (check.rows.length === 0) {
+        const result = await db.query('DELETE FROM categories WHERE id = $1 RETURNING *', [categoryId]);
+
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: "Категорію не знайдено" });
         }
 
-        await db.query('DELETE FROM categories WHERE id = $1', [id]);
-        res.status(200).json({ message: "Категорію успішно видалено" });
+        res.status(200).json({ message: "Категорію успішно видалено", deletedCategory: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Помилка при видаленні" });
+        res.status(500).json({ error: "Помилка при видаленні категорії", details: err.message });
     }
 };
