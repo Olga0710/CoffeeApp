@@ -1,6 +1,11 @@
 const { Pool } = require('pg');
 
-const isDockerLocal = process.env.DATABASE_URL && process.env.DATABASE_URL.includes('@db:');
+const isDockerLocal = process.env.DATABASE_URL && (
+    process.env.DATABASE_URL.includes('localhost') ||
+    process.env.DATABASE_URL.includes('127.0.0.1') ||
+    process.env.DATABASE_URL.includes('@db:')
+);
+
 const poolConfig = {
     connectionString: process.env.DATABASE_URL,
 };
@@ -18,8 +23,7 @@ console.log(`Підключення до PostgreSQL ініціалізовано
 const initDb = async () => {
     try {
        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
+     
         await pool.query(`
             CREATE TABLE IF NOT EXISTS shops (
                 id SERIAL PRIMARY KEY,
