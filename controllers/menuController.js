@@ -1,8 +1,8 @@
 const db = require('../models/db');
 
-
 exports.getShopMenu = async (req, res) => {
     const shopId = req.params.shopId;
+    const categoryId = req.query.category;
     try {
         const shopResult = await db.query('SELECT * FROM shops WHERE id = $1', [shopId]);
         const shop = shopResult.rows[0];
@@ -13,9 +13,26 @@ exports.getShopMenu = async (req, res) => {
         const catResult = await db.query('SELECT * FROM categories WHERE shop_id = $1 ORDER BY id ASC', [shopId]);
         const categories = catResult.rows;
 
-        const menuResult = await db.query('SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id DESC', [shopId]);
+        // Формуємо динамічний запит з урахуванням категорії
+        let menuQuery = 'SELECT * FROM menu_items WHERE shop_id = $1';
+        let queryParams = [shopId];
 
-        res.render('menu/list', { shop, categories, menuItems: menuResult.rows });
+        if (categoryId) {
+            menuQuery += ' AND category_id = $2';
+            queryParams.push(categoryId);
+        }
+
+        menuQuery += ' ORDER BY id DESC';
+
+        // Використовуємо правильну змінну menuQuery та параметри
+        const menuResult = await db.query(menuQuery, queryParams);
+
+        res.render('menu/list', {
+            shop,
+            categories,
+            menuItems: menuResult.rows,
+            currentCategory: categoryId || null
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send("Помилка завантаження меню: " + err.message);

@@ -2,23 +2,126 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Додати категорію</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Додати категорію | Travel-Журнал</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-cream: #FAF7F2;
+            --coffee-dark: #2C221E;
+            --coffee-primary: #C87D55;
+            --card-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-cream);
+            color: var(--coffee-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(200, 125, 85, 0.15);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(44, 34, 30, 0.05);
+        }
+
+        .form-control, .form-control:focus {
+            background-color: #FAF7F2;
+            border: 1px solid rgba(200, 125, 85, 0.2);
+            border-radius: 12px;
+            color: var(--coffee-dark);
+            padding: 12px 16px;
+        }
+
+        .form-control:focus {
+            border-color: var(--coffee-primary);
+            box-shadow: 0 0 0 4px rgba(200, 125, 85, 0.15);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--coffee-dark);
+        }
+
+        .btn-coffee {
+            background-color: var(--coffee-primary);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            padding: 12px 24px;
+            transition: background 0.2s;
+        }
+
+        .btn-coffee:hover {
+            background-color: #B26B45;
+            color: white;
+        }
+
+        .btn-outline-custom {
+            border: 1px solid rgba(44, 34, 30, 0.2);
+            color: var(--coffee-dark);
+            border-radius: 30px;
+            font-weight: 600;
+            padding: 12px 24px;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .btn-outline-custom:hover {
+            background-color: rgba(44, 34, 30, 0.05);
+            color: var(--coffee-dark);
+        }
+    </style>
 </head>
-<body class="container mt-4" style="max-width: 500px;">
-    <div class="mb-3">
-        <a href="/shops/<%= shop.id %>/categories" class="btn btn-secondary btn-sm">← Назад до категорій</a>
+<body>
+
+    <div class="container" style="max-width: 520px;">
+        
+        <!-- Кнопка назад -->
+        <div class="mb-3 text-start">
+            <a href="/shops/<%= shop.id %>/menu" class="text-decoration-none text-muted small fw-bold">
+                <i class="bi bi-arrow-left"></i> Назад до меню
+            </a>
+        </div>
+
+        <!-- Картка форми -->
+        <div class="form-card">
+            <div class="text-center mb-4">
+                <span class="fs-1">📂</span>
+                <h3 class="fw-bold mt-2">Нова категорія</h3>
+                <p class="text-muted small mb-0">Для закладу: <strong class="text-dark"><%= shop.name %></strong></p>
+            </div>
+
+            <form action="/shops/<%= shop.id %>/categories" method="POST">
+                <div class="mb-4">
+                    <label class="form-label mb-2">Назва категорії:</label>
+                    <input type="text" name="name" class="form-control" placeholder="Наприклад: Кавові напої, Десерти..." required>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-coffee flex-fill shadow-sm">Зберегти категорію</button>
+                    <a href="/shops/<%= shop.id %>/menu" class="btn btn-outline-custom">Скасувати</a>
+                </div>
+            </form>
+        </div>
+
     </div>
 
-    <h1>➕ Нова категорія</h1>
-    <p class="text-muted">Для закладу: <%= shop.name %></p>
-
-    <form action="/shops/<%= shop.id %>/categories" method="POST" class="card p-4 shadow-sm mt-3">
-        <div class="mb-3">
-            <label class="form-label">Назва категорії:</label>
-            <input type="text" name="name" class="form-control" placeholder="Наприклад: Кавові напої, Десерти..." required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Зберегти категорію</button>
-    </form>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

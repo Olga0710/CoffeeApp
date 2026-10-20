@@ -1,14 +1,17 @@
 const { Pool } = require('pg');
 
-const isDockerLocal = process.env.DATABASE_URL && (
+const connectionString = process.env.DATABASE_URL || 'postgres://postgres:password@localhost:5433/coffeedb';
+
+const isDockerLocal = !process.env.DATABASE_URL || (
     process.env.DATABASE_URL.includes('localhost') ||
     process.env.DATABASE_URL.includes('127.0.0.1') ||
     process.env.DATABASE_URL.includes('@db:')
 );
 
 const poolConfig = {
-    connectionString: process.env.DATABASE_URL,
+    connectionString: connectionString,
 };
+   
 
 if (!isDockerLocal) {
     poolConfig.ssl = {
