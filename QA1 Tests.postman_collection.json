@@ -1,0 +1,164 @@
+{
+  "info": {
+    "_postman_id": "b4a09dcd-e950-4d76-b206-aeeb3536ef73",
+    "name": "QA1 Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54679857",
+    "_collection_link": "https://go.postman.co/collection/54679857-b4a09dcd-e950-4d76-b206-aeeb3536ef73?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Get data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Response is an object with correct ID\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData).to.be.an('object');\r\n    pm.expect(jsonData.id).to.eql(2);\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/shops",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "shops"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Post data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Successful POST request\", function () {\r\n    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r\n});\r\npm.test(\"Response is JSON object\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData).to.be.an('object');\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Test Coffee Shop\",\r\n    \"description\": \"Cozy place\",\r\n    \"address\": \"Kyiv, Khreshchatyk st. 1\",\r\n    \"opening_hours\": \"08:00 - 21:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/shops",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "shops"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Response confirms update\", function () {\r\n    var jsonData = pm.response.json();\r\n    pm.expect(jsonData).to.be.an('object');\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"Завертайло (Оновлено)\",\r\n    \"description\": \"Краща кав'ярня та пекарня1\",\r\n    \"address\": \"вул. Володимирська, 24А\",\r\n    \"opening_hours\": \"08:00 - 22:00\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/shops/2",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "shops",
+            "2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "New Request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200 or 204\", function () {\r\n    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/shops/9",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "shops",
+            "9"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
