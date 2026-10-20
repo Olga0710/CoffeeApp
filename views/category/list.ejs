@@ -2,173 +2,39 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Категорії меню | <%= shop.name %></title>
-    <!-- Bootstrap 5 CSS -->
+    <title>Категорії — <%= shop.name %></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts: Plus Jakarta Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-cream: #FAF7F2;
-            --coffee-dark: #2C221E;
-            --coffee-primary: #C87D55;
-            --coffee-accent: #E8A87C;
-            --card-bg: #FFFFFF;
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-cream);
-            color: var(--coffee-dark);
-            padding-top: 50px;
-            padding-bottom: 60px;
-        }
-
-        .main-card {
-            background: var(--card-bg);
-            border: 1px solid rgba(200, 125, 85, 0.15);
-            border-radius: 28px;
-            padding: 40px;
-            box-shadow: 0 15px 35px rgba(44, 34, 30, 0.05);
-        }
-
-        .category-item {
-            background-color: #FAF7F2;
-            border: 1px solid rgba(200, 125, 85, 0.12);
-            border-radius: 16px;
-            padding: 16px 24px;
-            transition: all 0.2s ease;
-        }
-
-        .category-item:hover {
-            background-color: #FFFFFF;
-            box-shadow: 0 8px 20px rgba(44, 34, 30, 0.06);
-            border-color: rgba(200, 125, 85, 0.25);
-        }
-
-        .btn-coffee {
-            background-color: var(--coffee-primary);
-            color: white;
-            border-radius: 30px;
-            font-weight: 600;
-            border: none;
-            padding: 10px 20px;
-            transition: background 0.2s;
-        }
-
-        .btn-coffee:hover {
-            background-color: #B26B45;
-            color: white;
-        }
-
-        .btn-action-edit {
-            background-color: #F8F1E9;
-            color: var(--coffee-primary);
-            border: 1px solid rgba(200, 125, 85, 0.3);
-            border-radius: 20px;
-            font-weight: 600;
-            padding: 6px 16px;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-
-        .btn-action-edit:hover {
-            background-color: var(--coffee-primary);
-            color: white;
-        }
-
-        .btn-action-delete {
-            background-color: #FDF2F2;
-            color: #DC3545;
-            border: 1px solid rgba(220, 53, 69, 0.2);
-            border-radius: 20px;
-            font-weight: 600;
-            padding: 6px 16px;
-            transition: all 0.2s;
-        }
-
-        .btn-action-delete:hover {
-            background-color: #DC3545;
-            color: white;
-        }
-    </style>
 </head>
-<body>
-
-    <div class="container" style="max-width: 800px;">
-        
-        <!-- Кнопка повернення назад -->
-        <div class="mb-4 text-start">
-            <a href="/shops/<%= shop.id %>/menu" class="text-decoration-none text-muted small fw-bold">
-                <i class="bi bi-arrow-left"></i> Назад до меню
-            </a>
-        </div>
-
-        <div class="main-card">
-            
-            <!-- Заголовок сторінки -->
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 pb-3 border-bottom">
-                <div>
-                    <span class="badge rounded-pill bg-light text-dark px-3 py-2 fw-semibold mb-2 border">
-                        ☕ <%= shop.name %>
-                    </span>
-                    <h2 class="fw-bold m-0 d-flex align-items-center gap-2">
-                        <span>📂 Категорії меню</span>
-                    </h2>
-                </div>
-                <a href="/shops/<%= shop.id %>/categories/create" class="btn btn-coffee shadow-sm">
-                    <i class="bi bi-plus-lg"></i> Додати категорію
-                </a>
-            </div>
-
-            <!-- Список категорій -->
-            <% if (typeof categories === 'undefined' || categories.length === 0) { %>
-                <div class="text-center py-5 text-muted bg-light rounded-4 border border-dashed">
-                    <i class="bi bi-folder-x fs-1 text-secondary mb-2 d-block"></i>
-                    <h5 class="fw-bold">Категорій ще немає</h5>
-                    <p class="small mb-3">Створіть першу категорію для сортування товарів закладу!</p>
-                    <a href="/shops/<%= shop.id %>/categories/create" class="btn btn-coffee btn-sm px-4">
-                        <i class="bi bi-plus-lg"></i> Створити категорію
-                    </a>
-                </div>
-            <% } else { %>
-                <div class="d-flex flex-column gap-3">
-                    <% categories.forEach(category => { %>
-                        <div class="category-item d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="p-2 rounded-circle" style="background: #F3E9E2; color: var(--coffee-primary);">
-                                    <i class="bi bi-folder-fill fs-5"></i>
-                                </div>
-                                <span class="fw-bold fs-5 text-dark"><%= category.name %></span>
-                            </div>
-
-                            <div class="d-flex align-items-center gap-2">
-                                <!-- Посилання на редагування -->
-                                <a href="/shops/<%= shop.id %>/categories/edit/<%= category.id %>" class="btn btn-action-edit btn-sm">
-                                    <i class="bi bi-pencil-fill"></i> Редагувати
-                                </a>
-                                
-                                <!-- ВИПРАВЛЕНИЙ ШЛЯХ ВИДАЛЕННЯ -->
-                                <form action="/shops/<%= shop.id %>/categories/delete/<%= category.id %>" method="POST" class="d-inline" onsubmit="return confirm('Ви дійсно бажаєте видалити цю категорію?');">
-                                    <button type="submit" class="btn btn-action-delete btn-sm">
-                                        <i class="bi bi-trash-fill"></i> Видалити
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    <% }) %>
-                </div>
-            <% } %>
-
-        </div>
-
+<body class="container mt-4" style="max-width: 700px;">
+    <div class="mb-3">
+        <a href="/shops/<%= shop.id %>/menu" class="btn btn-secondary btn-sm">← Назад до меню</a>
     </div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📁 Категорії меню: <%= shop.name %></h1>
+        <a href="/shops/<%= shop.id %>/categories/create" class="btn btn-success">+ Додати категорію</a>
+    </div>
+
+    <% if (categories.length === 0) { %>
+        <p class="text-muted">У цієї кав'ярні ще немає категорій. Створіть першу, щоб додавати страви!</p>
+    <% } else { %>
+        <ul class="list-group shadow-sm">
+            <% categories.forEach(cat => { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="fs-5"><%= cat.name %></span>
+                    
+                    <div class="d-flex gap-2">
+                        <!-- Кнопка редагування категорії -->
+                        <a href="/shops/<%= shop.id %>/categories/edit/<%= cat.id %>" class="btn btn-warning btn-sm">Редагувати</a>
+                        
+                        <!-- Кнопка видалення категорії -->
+                        <form action="/shops/<%= shop.id %>/categories/delete/<%= cat.id %>" method="POST" class="m-0">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Видалити категорію? Усі пов’язані позиції також можуть бути видалені!')">Видалити</button>
+                        </form>
+                    </div>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
 </body>
 </html>
