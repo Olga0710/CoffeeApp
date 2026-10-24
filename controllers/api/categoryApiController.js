@@ -85,3 +85,22 @@ exports.deleteCategory = async (req, res) => {
         res.status(500).json({ error: "Помилка при видаленні категорії", details: err.message });
     }
 };
+
+exports.searchCategories = async (req, res) => {
+    try {
+        const searchQuery = req.query.q || '';
+
+        if (searchQuery.length < 3) {
+            return res.json([]);
+        }
+
+        const query = 'SELECT id, name FROM categories WHERE name ILIKE $1 LIMIT 20';
+        const values = [`%${searchQuery}%`];
+
+        const result = await db.query(query, values);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Помилка пошуку категорій:', err);
+        res.status(500).json({ error: 'Помилка сервера' });
+    }
+};

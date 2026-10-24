@@ -82,19 +82,30 @@ exports.updateMenuItem = async (req, res) => {
     const { shopId, itemId } = req.params;
     const { category_id, name, description, price, image_url } = req.body;
 
-    const query = `
-        UPDATE menu_items 
-        SET category_id = $1, name = $2, description = $3, price = $4, image_url = $5
-        WHERE id = $6
-    `;
+    if (!name || !price) {
+        return res.status(400).send("Поля 'name' та 'price' є обов'язковими");
+    }
 
     try {
+        // Перевіряємо, чи існує такий товар перед оновленням
+        const checkItem = await db.query('SELECT * FROM menu_items WHERE id = $1 AND shop_id = $2', [itemId, shopId]);
+        if (checkItem.rows.length === 0) {
+            return res.status(404).send("Позицію меню не знайдено для оновлення");
+        }
+
+        const query = `
+            UPDATE menu_items 
+            SET category_id = $1, name = $2, description = $3, price = $4, image_url = $5
+            WHERE id = $6
+        `;
+
         await db.query(query, [category_id, name, description, price, image_url, itemId]);
         res.redirect(`/shops/${shopId}/menu`);
     } catch (err) {
         console.error(err);
         res.status(500).send("Помилка при оновленні: " + err.message);
     }
+    
 };
 
 exports.deleteMenuItem = async (req, res) => {

@@ -14,6 +14,6 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "jest --detectOpenHandles --forceExit"
+    "test": "cross-env DATABASE_URL=postgres://postgres:password@localhost:5433/coffeedb jest --detectOpenHandles --forceExit"
   }
 }
