@@ -34,13 +34,17 @@ const initDb = async () => {
                 description TEXT,
                 address TEXT NOT NULL,
                 opening_hours TEXT,
-                image_url TEXT
+                image_url TEXT,
+                latitude NUMERIC(9, 6) DEFAULT 50.4501,
+                longitude NUMERIC(9, 6) DEFAULT 30.5234
             )
         `);
 
         await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS opening_hours TEXT;`);
         await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS image_url TEXT;`);
         await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS category_id INTEGER;`);
+        await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS latitude NUMERIC(9, 6) DEFAULT 50.4501;`);
+        await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS longitude NUMERIC(9, 6) DEFAULT 30.5234;`);
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS categories (

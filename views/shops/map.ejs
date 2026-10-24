@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Мапа кав'ярень — Zruchno Coffee</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Chart.js CDN (Вимога F1) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #map {
+            height: 60vh;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        /* Покращені стилі для спливаючого вікна Leaflet */
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            padding: 5px;
+        }
+        .leaflet-popup-content {
+            min-width: 240px !important;
+            max-width: 280px !important;
+            text-align: left;
+            font-size: 14px;
+        }
+        .shop-address {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container my-4">
+        <h2 class="mb-3">🗺️ Інтерактивна мапа кав'ярень</h2>
+        <p class="text-muted">Усі заклади мережі на єдиній мапі з можливістю миттєвої фільтрації (вимога C8) та комбінованою аналітикою (вимога F1).</p>
+
+        <!-- Панель фільтрації в реальному часі -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Пошук за назвою або адресою...">
+            </div>
+        </div>
+
+        <!-- Контейнер для мапи -->
+        <div id="map"></div>
+
+        <!-- Блок візуалізації комбінованої статистики -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm p-3">
+                    <h5 class="mb-3 text-center">📊 Аналітика меню: асортимент та середня вартість</h5>
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="shopsStatsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a href="/shops" class="btn btn-secondary">← Назад до списку кав'ярень</a>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Ініціалізація мапи (центр на Києві)
+        const map = L.map('map').setView([50.4501, 30.5234], 13);
+
+        // Підключення шару OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        let markersLayer = L.layerGroup().addTo(map);
+        let allShops = [];
+        let statsChart = null;
+
+        // Функція для відображення маркерів на мапі
+        function displayMarkers(shops) {
+            markersLayer.clearLayers();
+
+            shops.forEach(shop => {
+                if (shop.latitude && shop.longitude) {
+                    const marker = L.marker([shop.latitude, shop.longitude]);
+                    
+                    marker.bindPopup(`
+                        <div style="padding: 4px;">
+                            <h6 class="mb-1" style="font-weight: bold; color: #333;">${shop.name}</h6>
+                            <p class="mb-2 text-muted shop-address" style="font-size: 13px;">📍 ${shop.address}</p>
+                            <a href="/shops/${shop.id}/menu" class="btn btn-sm btn-primary w-100 mt-1" style="color: white !important;">Переглянути меню</a>
+                        </div>
+                    `);
+
+                    markersLayer.addLayer(marker);
+                }
+            });
+        }
+
+        // Функція для побудови комбінованого графіка (Mixed Chart)
+        async function renderMixedChart(shops) {
+            const ctx = document.getElementById('shopsStatsChart').getContext('2d');
+            const labels = [];
+            const menuCounts = [];
+            const avgPrices = [];
+
+            for (const shop of shops) {
+                try {
+                    const res = await fetch(`/api/shops/${shop.id}/menu`);
+                    const menuResponse = await res.json();
+                    
+                    const menuItems = Array.isArray(menuResponse) 
+                        ? menuResponse 
+                        : (menuResponse.data || []);
+
+                    labels.push(shop.name);
+                    menuCounts.push(menuItems.length);
+
+                    if (menuItems.length > 0) {
+                        const totalPrice = menuItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
+                        avgPrices.push((totalPrice / menuItems.length).toFixed(2));
+                    } else {
+                        avgPrices.push(0);
+                    }
+                } catch (e) {
+                    labels.push(shop.name);
+                    menuCounts.push(0);
+                    avgPrices.push(0);
+                }
+            }
+
+            if (statsChart) {
+                statsChart.destroy();
+            }
+
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Кількість позицій у меню',
+                            data: menuCounts,
+                            backgroundColor: 'rgba(13, 110, 253, 0.5)', // Синій колір для кількості
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'line',
+                            label: 'Середня ціна (грн)',
+                            data: avgPrices,
+                            borderColor: 'rgba(255, 99, 132, 1)', // Червона лінія для цін
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.3, // Плавна лінія
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Кількість позицій'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Ціна (₴)'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false // Щоб сітки двох осей не накладалися
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' ₴';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Завантаження даних кав'ярень через наш API
+        fetch('/api/shops')
+            .then(res => res.json())
+            .then(data => {
+                allShops = data;
+                displayMarkers(allShops);
+                renderMixedChart(allShops);
+            })
+            .catch(err => console.error('Помилка завантаження кав\'ярень:', err));
+
+        // Реалізація динамічної фільтрації в реальному часі
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchText = e.target.value.toLowerCase();
+            const filteredShops = AllShops.filter(shop => 
+                shop.name.toLowerCase().includes(searchText) || 
+                shop.address.toLowerCase().includes(searchText)
+            );
+            displayMarkers(filteredShops);
+        });
+    </script>
+</body>
+</html>

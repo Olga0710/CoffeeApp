@@ -38,11 +38,15 @@ app.get('/shops/:shopId/menu/edit/:itemId', menuController.getEditMenuItemForm);
 app.post('/shops/:shopId/menu/edit/:itemId', menuController.updateMenuItem);
 app.post('/shops/:shopId/menu/delete/:itemId', menuController.deleteMenuItem);
 
+app.get('/api/shops/paginated', shopApiController.getShopsPaginated);
+
 app.get('/api/shops', shopApiController.getAllShops);
 app.get('/api/shops/:id', shopApiController.getShopById);
 app.post('/api/shops', shopApiController.createShop);
 app.put('/api/shops/:id', shopApiController.updateShop);
 app.delete('/api/shops/:id', shopApiController.deleteShop);
+
+app.get('/api/categories/search', categoryApiController.searchCategories);
 
 app.get('/api/shops/:shopId/categories', categoryApiController.getShopCategories);
 app.post('/api/shops/:shopId/categories', categoryApiController.createCategory);
@@ -55,6 +59,7 @@ app.post('/api/shops/:shopId/menu', menuApiController.addMenuItem);
 app.put('/api/menu/:itemId', menuApiController.updateMenuItem);
 app.delete('/api/menu/:itemId', menuApiController.deleteMenuItem);
 
+app.get('/map', (req, res) => res.render('shops/map'));
 
 
 if (require.main === module) {

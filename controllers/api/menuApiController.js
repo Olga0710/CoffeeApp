@@ -8,9 +8,36 @@ exports.getShopMenu = async (req, res) => {
         if (shopResult.rows.length === 0) {
             return res.status(404).json({ error: "Кав'ярню не знайдено" });
         }
+        const limit = req.query.limit ? parseInt(req.query.limit) : null;
+        const skip = req.query.skip ? parseInt(req.query.skip) : 0;
 
-        const menuResult = await db.query('SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id DESC', [shopId]);
-        res.status(200).json(menuResult.rows);
+        if (limit !== null) {
+            const countResult = await db.query('SELECT COUNT(*) FROM menu_items WHERE shop_id = $1', [shopId]);
+            const totalCount = parseInt(countResult.rows[0].count);
+
+            const result = await db.query(
+                'SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3',
+                [shopId, limit, skip]
+            );
+
+            let nextLink = null;
+            if (skip + limit < totalCount) {
+                const nextSkip = skip + limit;
+                nextLink = `${req.protocol}://${req.get('host')}/api/shops/${shopId}/menu?skip=${nextSkip}&limit=${limit}`;
+            }
+
+            return res.status(200).json({
+                total: totalCount,
+                limit: limit,
+                skip: skip,
+                nextLink: nextLink,
+                data: result.rows
+            });
+        }
+
+        
+        const result = await db.query('SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id ASC', [shopId]);
+        res.status(200).json(result.rows);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Помилка сервера при отриманні меню", details: err.message });
@@ -74,5 +101,44 @@ exports.deleteMenuItem = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Помилка при видаленні позиції", details: err.message });
+    }
+};
+
+exports.getShopMenuPaginated = async (req, res) => {
+    const shopId = req.params.shopId;
+    try {
+
+        const limit = req.query.limit ? parseInt(req.query.limit) : null;
+        const skip = req.query.skip ? parseInt(req.query.skip) : 0;
+
+        if (limit !== null) {
+            const countResult = await db.query('SELECT COUNT(*) FROM menu_items WHERE shop_id = $1', [shopId]);
+            const totalCount = parseInt(countResult.rows[0].count);
+
+            const result = await db.query(
+                'SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3',
+                [shopId, limit, skip]
+            );
+
+            let nextLink = null;
+            if (skip + limit < totalCount) {
+                const nextSkip = skip + limit;
+                nextLink = `${req.protocol}://${req.get('host')}/api/shops/${shopId}/menu?skip=${nextSkip}&limit=${limit}`;
+            }
+
+            return res.json({
+                total: totalCount,
+                limit: limit,
+                skip: skip,
+                nextLink: nextLink,
+                data: result.rows
+            });
+        }
+        const result = await db.query('SELECT * FROM menu_items WHERE shop_id = $1 ORDER BY id ASC', [shopId]);
+        res.status(200).json(result.rows);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Помилка сервера", details: err.message });
     }
 };
