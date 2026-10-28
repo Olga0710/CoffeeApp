@@ -9,6 +9,7 @@ const categoryController = require('./controllers/categoryController');
 const shopApiController = require('./controllers/api/shopApiController');
 const categoryApiController = require('./controllers/api/categoryApiController');
 const menuApiController = require('./controllers/api/menuApiController');
+const agentController = require('./controllers/api/agentController');
 
 
 app.set('view engine', 'ejs');
@@ -59,8 +60,12 @@ app.post('/api/shops/:shopId/menu', menuApiController.addMenuItem);
 app.put('/api/menu/:itemId', menuApiController.updateMenuItem);
 app.delete('/api/menu/:itemId', menuApiController.deleteMenuItem);
 
-app.get('/map', (req, res) => res.render('shops/map'));
+app.post('/api/agent/chat', agentController.chatWithAgent);
+app.get('/api/agent/chat', agentController.chatWithAgent);
 
+app.get('/map', (req, res) => res.render('shops/map'));
+app.get('/chat', (req, res) => res.render('shops/chat'));
+app.get('/notes', (req, res) => res.render('notes'))
 
 if (require.main === module) {
     app.listen(PORT, () => {

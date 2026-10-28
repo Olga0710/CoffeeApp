@@ -428,7 +428,8 @@
                         url: '/api/categories/search',
                         dataType: 'json',
                         data: {
-                            q: request.term // Передаємо введений рядок на бекенд
+                            q: request.term,// Передаємо введений рядок на бекенд
+                            shopId: '<%= shop.id %>'
                         },
                         success: function (data) {
                             response(data.map(cat => ({

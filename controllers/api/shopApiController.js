@@ -1,10 +1,30 @@
 const db = require('../../models/db');
+const cache = require('../../services/cache');
 
 // Отримати список усіх кав'ярень (GET)
 exports.getAllShops = async (req, res) => {
     try {
+        const cacheKey = 'all_shops_api';
+
+        const cachedData = cache.get(cacheKey);
+        if (cachedData) {
+            console.log("⚡ Відповідь взято з Кешу (Memory Cache)");
+            return res.status(200).json({
+                source: 'cache',
+                data: cachedData
+            });
+        }
         const result = await db.query('SELECT * FROM shops ORDER BY id ASC');
-        res.status(200).json(result.rows);
+        const shops = result.rows;
+
+        cache.set(cacheKey, shops, 60);
+
+        console.log("🗄️ Відповідь отримана з Бази Даних та збережена в кеш");
+        res.status(200).json({
+            source: 'database',
+            data: shops
+        });
+        
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Помилка сервера при отриманні списку кав'ярень", details: err.message });
@@ -73,6 +93,8 @@ exports.createShop = async (req, res) => {
                 finalLon
             ]
         );
+        cache.del('all_shops_api');
+
         res.status(201).json({ message: "Кав'ярню успішно створено", shop: result.rows[0] });
     } catch (err) {
         console.error(err);
@@ -137,6 +159,8 @@ exports.updateShop = async (req, res) => {
         if (result.rowCount === 0) {
             return res.status(404).json({ error: "Кав'ярню не знайдено для оновлення" });
         }
+        cache.del('all_shops_api');
+
 
         res.status(200).json({ message: "Кав'ярню оновлено", shop: result.rows[0] });
     } catch (err) {
@@ -154,7 +178,7 @@ exports.deleteShop = async (req, res) => {
         if (result.rowCount === 0) {
             return res.status(404).json({ error: "Кав'ярню не знайдено для видалення" });
         }
-
+        cache.del('all_shops_api');
         res.status(200).json({ message: "Кав'ярню успішно видалено", deletedShop: result.rows[0] });
     } catch (err) {
         console.error(err);

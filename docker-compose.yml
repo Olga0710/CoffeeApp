@@ -12,6 +12,11 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d coffeedb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
@@ -25,7 +30,8 @@ services:
       - .:/app
       - /app/node_modules
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:

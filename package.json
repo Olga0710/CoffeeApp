@@ -3,13 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "dotenv": "^16.4.5",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
+    "node_cache": "^0.0.3",
+    "node-cache": "^5.1.2",
+    "openai": "^7.45.1",
     "pg": "^8.23.0"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
     "jest": "^30.5.2",
+    "nock": "^13.3.5",
     "supertest": "^7.3.1"
   },
   "scripts": {

@@ -67,7 +67,7 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
+  <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Ініціалізація мапи (центр на Києві)
@@ -149,7 +149,7 @@
                             type: 'bar',
                             label: 'Кількість позицій у меню',
                             data: menuCounts,
-                            backgroundColor: 'rgba(13, 110, 253, 0.5)', // Синій колір для кількості
+                            backgroundColor: 'rgba(13, 110, 253, 0.5)',
                             borderColor: 'rgba(13, 110, 253, 1)',
                             borderWidth: 1,
                             yAxisID: 'y'
@@ -158,11 +158,11 @@
                             type: 'line',
                             label: 'Середня ціна (грн)',
                             data: avgPrices,
-                            borderColor: 'rgba(255, 99, 132, 1)', // Червона лінія для цін
+                            borderColor: 'rgba(255, 99, 132, 1)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderWidth: 3,
                             fill: false,
-                            tension: 0.3, // Плавна лінія
+                            tension: 0.3,
                             yAxisID: 'y1'
                         }
                     ]
@@ -194,7 +194,7 @@
                             },
                             beginAtZero: true,
                             grid: {
-                                drawOnChartArea: false // Щоб сітки двох осей не накладалися
+                                drawOnChartArea: false
                             },
                             ticks: {
                                 callback: function(value) {
@@ -217,10 +217,9 @@
             })
             .catch(err => console.error('Помилка завантаження кав\'ярень:', err));
 
-        // Реалізація динамічної фільтрації в реальному часі
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const searchText = e.target.value.toLowerCase();
-            const filteredShops = AllShops.filter(shop => 
+            const filteredShops = allShops.filter(shop => 
                 shop.name.toLowerCase().includes(searchText) || 
                 shop.address.toLowerCase().includes(searchText)
             );

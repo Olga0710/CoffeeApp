@@ -10,7 +10,7 @@ describe('C5: REST API & JSON CRUD Tests', () => {
 
         expect(response.status).toBe(200);
         expect(response.headers['content-type']).toMatch(/json/);
-        expect(Array.isArray(response.body)).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     
