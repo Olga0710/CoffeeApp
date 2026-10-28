@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion-like Markdown Editor - ZruchnoCoffee</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-cream: #FAF7F2;
+            --coffee-dark: #2C221E;
+            --coffee-primary: #C87D55;
+            --card-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-cream);
+            color: var(--coffee-dark);
+            padding-top: 90px;
+            padding-bottom: 40px;
+        }
+
+        .navbar {
+            background-color: var(--card-bg) !important;
+            box-shadow: 0 4px 20px rgba(44, 34, 30, 0.05);
+        }
+
+        .btn-coffee {
+            background-color: var(--coffee-primary);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            transition: background 0.2s;
+        }
+
+        .btn-coffee:hover {
+            background-color: #B26B45;
+            color: white;
+        }
+
+        .editor-container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(44, 34, 30, 0.05);
+            border: 1px solid rgba(200, 125, 85, 0.15);
+        }
+
+        .editor-header {
+            border-bottom: 2px solid #f1f1ef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            background: #FAF7F2;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .btn-toolbar {
+            background: #2ea44f;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .btn-toolbar:hover {
+            background: #2c974b;
+        }
+
+        .btn-danger-custom {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-left: auto;
+        }
+
+        .btn-danger-custom:hover {
+            background: #bb2d3b;
+        }
+
+        .save-status {
+            color: #7f7f7f;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .notion-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .notion-block {
+            flex-grow: 1;
+            padding: 6px 10px;
+            border-radius: 6px;
+            outline: none;
+            min-height: 32px;
+            font-size: 1.05em;
+            line-height: 1.5;
+            border: 1px solid transparent;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .notion-block:focus {
+            background: #fcfbf9;
+            border-color: #e8a87c;
+        }
+
+        .block-h1 {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-top: 10px;
+            color: var(--coffee-dark);
+        }
+
+        .block-h2 {
+            font-size: 1.35em;
+            font-weight: 600;
+            margin-top: 8px;
+            color: var(--coffee-dark);
+        }
+
+        .block-ul {
+            display: list-item;
+            list-style-type: disc;
+            margin-left: 30px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: #a0a0a0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- НАВІГАЦІЯ -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-dark" href="/shops">
+                ☕ Zruchno Coffee News
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="/notes" class="btn btn-primary btn-sm px-3 shadow-sm">📝 Notion Редактор</a>
+                <a href="/map" class="btn btn-success btn-sm px-3 shadow-sm">📊 Мапа та статистика</a>
+                <a href="/chat" class="btn btn-outline-dark btn-sm px-3 shadow-sm">🤖 AI Бариста</a>
+                <a href="/shops/create" class="btn btn-coffee btn-sm px-3 shadow-sm">➕ Додати кав'ярню</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="editor-container">
+            <div class="editor-header d-flex justify-content-between align-items-center">
+                <h1 class="h3 fw-bold m-0">📝 Нотатки Баристи (Notion Editor)</h1>
+                <span id="saveStatus" class="save-status">Збережено в localStorage</span>
+            </div>
+            
+            <div class="toolbar">
+                <button class="btn-toolbar" onclick="addBlock('p')">+ Параграф</button>
+                <button class="btn-toolbar" onclick="addBlock('h1')">+ Заголовок 1</button>
+                <button class="btn-toolbar" onclick="addBlock('h2')">+ Заголовок 2</button>
+                <button class="btn-toolbar" onclick="addBlock('ul')">+ Список</button>
+                <button class="btn-danger-custom" onclick="clearAll()">Очистити все</button>
+            </div>
+
+            <!-- Контейнер неявного списку блоків -->
+            <div id="editorBlocks"></div>
+        </div>
+    </main>
+
+    <script>
+        const STORAGE_KEY = 'zruchno_notion_doc_v1';
+        const editorContainer = document.getElementById('editorBlocks');
+        const saveStatus = document.getElementById('saveStatus');
+
+        // Зберігаємо індекс поточного активного блоку (за замовчуванням останній)
+        let activeIndex = 0;
+
+        // Початкові дані, якщо сховище порожнє
+        let blocks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+            { id: 1, type: 'h1', content: 'Ласкаво просимо до редактора!' },
+            { id: 2, type: 'p', content: 'Тут ви можете писати текст, створювати списки та заголовки — все зберігається автоматично.' },
+            { id: 3, type: 'ul', content: 'Еспресо' },
+            { id: 4, type: 'ul', content: 'Капучино' }
+        ];
+
+        function render() {
+            editorContainer.innerHTML = '';
+            blocks.forEach((block, index) => {
+                const row = document.createElement('div');
+                row.className = 'notion-row';
+
+                const el = document.createElement('div');
+                el.className = `notion-block block-${block.type}`;
+                el.contentEditable = true;
+                el.innerText = block.content;
+
+                // Запам'ятовуємо індекс, коли користувач клікає або фокусується на блок
+                el.addEventListener('focus', () => {
+                    activeIndex = index;
+                });
+
+                el.addEventListener('click', () => {
+                    activeIndex = index;
+                });
+
+                // Подія введення тексту
+                el.addEventListener('input', (e) => {
+                    blocks[index].content = e.target.innerText;
+                    activeIndex = index;
+                    saveToLocalStorage();
+                });
+
+                // Гарячі клавіші (Enter та Backspace)
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const newType = block.type === 'ul' ? 'ul' : 'p';
+                        blocks.splice(index + 1, 0, { id: Date.now(), type: newType, content: '' });
+                        activeIndex = index + 1;
+                        render();
+                        const nextBlock = editorContainer.children[index + 1]?.querySelector('.notion-block');
+                        if (nextBlock) nextBlock.focus();
+                        saveToLocalStorage();
+                    } else if (e.key === 'Backspace' && el.innerText === '' && blocks.length > 1) {
+                        e.preventDefault();
+                        blocks.splice(index, 1);
+                        activeIndex = Math.max(0, index - 1);
+                        render();
+                        const prevBlock = editorContainer.children[activeIndex]?.querySelector('.notion-block');
+                        if (prevBlock) prevBlock.focus();
+                        saveToLocalStorage();
+                    }
+                });
+
+                // Кнопка видалення конкретного рядка (хрестик)
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.innerHTML = '×';
+                delBtn.title = 'Видалити блок';
+                delBtn.onclick = () => {
+                    if (blocks.length > 1) {
+                        blocks.splice(index, 1);
+                        activeIndex = Math.max(0, index - 1);
+                        render();
+                        saveToLocalStorage();
+                    }
+                };
+
+                row.appendChild(el);
+                row.appendChild(delBtn);
+                editorContainer.appendChild(row);
+            });
+        }
+
+        function addBlock(type) {
+            // Вставляємо новий блок одразу ПІСЛЯ поточного активного рядка
+            const insertIndex = activeIndex >= 0 && activeIndex < blocks.length ? activeIndex + 1 : blocks.length;
+            blocks.splice(insertIndex, 0, { id: Date.now(), type: type, content: '' });
+            activeIndex = insertIndex;
+            render();
+            
+            // Фокусуємося на новоствореному блоці
+            const targetRow = editorContainer.children[insertIndex];
+            if (targetRow) {
+                targetRow.querySelector('.notion-block').focus();
+            }
+            saveToLocalStorage();
+        }
+
+        function clearAll() {
+            if (confirm('Ви впевнені, що хочете очистити весь документ?')) {
+                blocks = [{ id: Date.now(), type: 'p', content: '' }];
+                activeIndex = 0;
+                render();
+                saveToLocalStorage();
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
+            saveStatus.innerText = 'Збережено!';
+            setTimeout(() => {
+                saveStatus.innerText = 'Збережено в localStorage';
+            }, 1000);
+        }
+
+        // Первинний рендер
+        render();
+    </script>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

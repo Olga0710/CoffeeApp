@@ -6,10 +6,10 @@ describe('F1: Statistics & Visualization Data API Tests', () => {
     test('GET /api/shops should return valid shops array for chart labels', async () => {
         const response = await request(app).get('/api/shops');
         expect(response.status).toBe(200);
-        expect(Array.isArray(response.body)).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
 
        
-        response.body.forEach(shop => {
+        response.body.data.forEach(shop => {
             expect(shop).toHaveProperty('id');
             expect(shop).toHaveProperty('name');
         });

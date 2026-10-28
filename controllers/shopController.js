@@ -1,6 +1,7 @@
 const db = require('../models/db');
 
 
+
 exports.getAllShops = async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM shops ORDER BY id ASC');
@@ -61,6 +62,27 @@ exports.createShop = async (req, res) => {
                 finalLon
             ]
         );
+
+        
+
+        try {
+            const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E'; 
+            const chatId = '1111023157';       
+
+            const message = `☕ Нова кав'ярня успішно додана до мережі!\n\n📍 Назва: ${name}\n🏠 Адреса: ${address || 'Не вказана'}\n⏰ Години: ${opening_hours || 'Не вказані'}`;
+
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message
+                })
+            });
+        } catch (tgErr) {
+            console.error("Помилка відправки в Telegram:", tgErr);
+        }
+
         res.redirect('/shops');
     } catch (err) {
         console.error(err);
@@ -124,6 +146,22 @@ exports.updateShop = async (req, res) => {
                 shopId
             ]
         );
+
+
+        try {
+            const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E';
+            const chatId = '1111023157';
+            const message = `🔄 Кав'ярню оновлено!\n\n📍 Назва: ${name}\n🏠 Адреса: ${address || 'Не вказана'}\n⏰ Години: ${opening_hours || 'Не вказані'}`;
+
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message })
+            });
+        } catch (tgErr) {
+            console.error("Помилка відправки в Telegram:", tgErr);
+        }
+
         res.redirect('/shops');
     } catch (err) {
         console.error(err);
@@ -135,6 +173,22 @@ exports.deleteShop = async (req, res) => {
     const shopId = req.params.id;
     try {
         await db.query('DELETE FROM shops WHERE id = $1', [shopId]);
+
+       
+
+        try {
+            const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E';
+            const chatId = '1111023157';
+            const message = `❌ Кав'ярню було видалено з мережі!\n🆔 ID закладу: ${shopId}`;
+
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: message })
+            });
+        } catch (tgErr) {
+            console.error("Помилка відправки в Telegram:", tgErr);
+        }
         res.redirect('/shops');
     } catch (err) {
         console.error(err);
@@ -142,9 +196,13 @@ exports.deleteShop = async (req, res) => {
     }
 };
 exports.getShopsApi = async (req, res) => {
+   
     try {
+        
         const result = await db.query('SELECT id, name, address, description, image_url, latitude, longitude FROM shops ORDER BY id DESC');
-        res.json(result.rows);
+        const shops = result.rows;
+
+       
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Помилка при отриманні даних для мапи" });

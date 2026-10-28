@@ -89,15 +89,26 @@ exports.deleteCategory = async (req, res) => {
 exports.searchCategories = async (req, res) => {
     try {
         const searchQuery = req.query.q || '';
+        const shopId = req.query.shopId || req.query.cafeId;
+
 
         if (searchQuery.length < 3) {
             return res.json([]);
         }
 
-        const query = 'SELECT id, name FROM categories WHERE name ILIKE $1 LIMIT 20';
-        const values = [`%${searchQuery}%`];
+        let query = 'SELECT id, name FROM categories WHERE name ILIKE $1';
+        let values = [`%${searchQuery}%`];
+
+        if (shopId) {
+            query += ' AND shop_id = $2';
+            values.push(shopId);
+        }
+
+        query += ' LIMIT 20';
 
         const result = await db.query(query, values);
+       
+
         res.json(result.rows);
     } catch (err) {
         console.error('Помилка пошуку категорій:', err);
