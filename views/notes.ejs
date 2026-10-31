@@ -111,11 +111,49 @@
             font-weight: 500;
         }
 
+        /* Стилі для рядка та Drag-n-Drop */
         .notion-row {
             display: flex;
             align-items: center;
             gap: 8px;
             margin-bottom: 6px;
+            transition: background 0.2s, transform 0.2s;
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        .notion-row.dragging {
+            opacity: 0.4;
+            background: #f1f1ef;
+        }
+
+        /* Анімація для вимоги С14 (динамічна підсвітка та рух) */
+        @keyframes syncHighlight {
+            0% {
+                background-color: rgba(200, 125, 85, 0.25);
+                transform: scale(1.005);
+            }
+            100% {
+                background-color: transparent;
+                transform: scale(1);
+            }
+        }
+
+        .sync-animated {
+            animation: syncHighlight 1.2s ease-out;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #b0b0b0;
+            font-size: 1.1rem;
+            padding: 0 4px;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .drag-handle:hover {
+            color: var(--coffee-dark);
         }
 
         .notion-block {
@@ -217,10 +255,10 @@
         const editorContainer = document.getElementById('editorBlocks');
         const saveStatus = document.getElementById('saveStatus');
 
-        // Зберігаємо індекс поточного активного блоку (за замовчуванням останній)
         let activeIndex = 0;
+        let draggedIndex = null;
 
-        // Початкові дані, якщо сховище порожнє
+        // Завантажуємо актуальні дані з localStorage
         let blocks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
             { id: 1, type: 'h1', content: 'Ласкаво просимо до редактора!' },
             { id: 2, type: 'p', content: 'Тут ви можете писати текст, створювати списки та заголовки — все зберігається автоматично.' },
@@ -233,29 +271,49 @@
             blocks.forEach((block, index) => {
                 const row = document.createElement('div');
                 row.className = 'notion-row';
+                row.draggable = true;
+
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'drag-handle';
+                dragHandle.innerHTML = '⋮⋮';
+                dragHandle.title = 'Перетягніть для сортування';
+
+                row.addEventListener('dragstart', (e) => {
+                    draggedIndex = index;
+                    setTimeout(() => row.classList.add('dragging'), 0);
+                });
+
+                row.addEventListener('dragend', () => {
+                    row.classList.remove('dragging');
+                    draggedIndex = null;
+                });
+
+                row.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+                row.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedIndex === null || draggedIndex === index) return;
+                    const movedItem = blocks.splice(draggedIndex, 1)[0];
+                    blocks.splice(index, 0, movedItem);
+                    activeIndex = index;
+                    render();
+                    saveToLocalStorage();
+                });
 
                 const el = document.createElement('div');
                 el.className = `notion-block block-${block.type}`;
                 el.contentEditable = true;
                 el.innerText = block.content;
 
-                // Запам'ятовуємо індекс, коли користувач клікає або фокусується на блок
-                el.addEventListener('focus', () => {
-                    activeIndex = index;
-                });
+                el.addEventListener('focus', () => { activeIndex = index; });
+                el.addEventListener('click', () => { activeIndex = index; });
 
-                el.addEventListener('click', () => {
-                    activeIndex = index;
-                });
-
-                // Подія введення тексту
                 el.addEventListener('input', (e) => {
                     blocks[index].content = e.target.innerText;
                     activeIndex = index;
                     saveToLocalStorage();
                 });
 
-                // Гарячі клавіші (Enter та Backspace)
                 el.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -277,7 +335,6 @@
                     }
                 });
 
-                // Кнопка видалення конкретного рядка (хрестик)
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-btn';
                 delBtn.innerHTML = '×';
@@ -291,6 +348,7 @@
                     }
                 };
 
+                row.appendChild(dragHandle);
                 row.appendChild(el);
                 row.appendChild(delBtn);
                 editorContainer.appendChild(row);
@@ -298,13 +356,11 @@
         }
 
         function addBlock(type) {
-            // Вставляємо новий блок одразу ПІСЛЯ поточного активного рядка
             const insertIndex = activeIndex >= 0 && activeIndex < blocks.length ? activeIndex + 1 : blocks.length;
             blocks.splice(insertIndex, 0, { id: Date.now(), type: type, content: '' });
             activeIndex = insertIndex;
             render();
             
-            // Фокусуємося на новоствореному блоці
             const targetRow = editorContainer.children[insertIndex];
             if (targetRow) {
                 targetRow.querySelector('.notion-block').focus();
@@ -329,7 +385,44 @@
             }, 1000);
         }
 
-        // Первинний рендер
+        // ==========================================
+        // СИНХРОНІЗАЦІЯ (С13) ТА ВІЗУАЛІЗАЦІЯ (С14)
+        // ==========================================
+        function handleRemoteUpdate(newJsonData) {
+            const parsed = JSON.parse(newJsonData);
+            if (JSON.stringify(parsed) !== JSON.stringify(blocks)) {
+                blocks = parsed;
+                render();
+
+                // Візуалізація змін у динаміці (Вимога С14)
+                const rows = editorContainer.querySelectorAll('.notion-row');
+                rows.forEach(row => {
+                    row.classList.add('sync-animated');
+                    setTimeout(() => {
+                        row.classList.remove('sync-animated');
+                    }, 1200);
+                });
+
+                saveStatus.innerText = 'Синхронізовано!';
+                setTimeout(() => {
+                    saveStatus.innerText = 'Збережено в localStorage';
+                }, 1500);
+            }
+        }
+
+        window.addEventListener('storage', (event) => {
+            if (event.key === STORAGE_KEY && event.newValue) {
+                handleRemoteUpdate(event.newValue);
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                handleRemoteUpdate(savedData);
+            }
+        });
+
         render();
     </script>
 

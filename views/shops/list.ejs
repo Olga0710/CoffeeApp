@@ -41,7 +41,6 @@
             margin-bottom: 40px;
         }
 
-        /* Стиль для затишного вступного блоку */
         .intro-article-card {
             background: var(--card-bg);
             border: 1px solid rgba(200, 125, 85, 0.2);
@@ -61,7 +60,6 @@
             font-size: 1.5rem;
         }
 
-        /* Ефект перегортання картки (Flip Card) зі збільшеною висотою */
         .flip-card {
             background-color: transparent;
             perspective: 1000px;
@@ -104,7 +102,6 @@
             justify-content: space-between;
         }
 
-        /* Акуратний і зручний скрол для збільшеного тексту на звороті */
         .flip-card-back .description-box {
             max-height: 280px;
             overflow-y: auto;
@@ -167,11 +164,29 @@
             <a class="navbar-brand fw-bold text-dark" href="/shops">
                 ☕ Zruchno Coffee News
             </a>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a href="/map" class="btn btn-success btn-sm px-3 shadow-sm">📊 Мапа та статистика</a>
-                <a href="/notes" class="btn btn-outline-primary btn-sm px-3 shadow-sm">📝 Notion Редактор</a
+                <a href="/notes" class="btn btn-outline-primary btn-sm px-3 shadow-sm">📝 Notion Редактор</a>
                 <a href="/chat" class="btn btn-outline-dark btn-sm px-3 shadow-sm">🤖 AI Бариста</a>
                 <a href="/shops/create" class="btn btn-coffee btn-sm px-3 shadow-sm">➕ Додати кав'ярню</a>
+
+                <!-- БЛОК АВТЕНТИФІКАЦІЇ GOOGLE OAUTH2 (Вимога C16) -->
+                <% if (typeof user !== 'undefined' && user) { %>
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle text-primary"></i> <%= user.name %>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><span class="dropdown-item-text small text-muted"><%= user.email %></span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger fw-semibold" href="/logout"><i class="bi bi-box-arrow-right"></i> Вийти</a></li>
+                        </ul>
+                    </div>
+                <% } else { %>
+                    <a href="/auth/google" class="btn btn-outline-dark btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1 ms-2">
+                        <i class="bi bi-google text-danger"></i> Увійти через Google
+                    </a>
+                <% } %>
             </div>
         </div>
     </nav>
@@ -243,7 +258,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- ЗВОРОТНА СТОРОНА КАРТКИ (Збільшений опис та Кнопки) -->
+                                    <!-- ЗВОРОТНА СТОРОНА КАРТКИ -->
                                     <div class="flip-card-back">
                                         <div>
                                             <h4 class="fw-bold mb-3 pb-2 border-bottom"><%= shop.name %></h4>
