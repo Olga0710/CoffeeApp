@@ -22,8 +22,8 @@
             padding: 5px;
         }
         .leaflet-popup-content {
-            min-width: 240px !important;
-            max-width: 280px !important;
+            min-width: 260px !important;
+            max-width: 300px !important;
             text-align: left;
             font-size: 14px;
         }
@@ -38,7 +38,7 @@
 
     <div class="container my-4">
         <h2 class="mb-3">🗺️ Інтерактивна мапа кав'ярень</h2>
-        <p class="text-muted">Усі заклади мережі на єдиній мапі з можливістю миттєвої фільтрації (вимога C8) та комбінованою аналітикою (вимога F1).</p>
+        <p class="text-muted">Усі заклади мережі на єдиній мапі з можливістю миттєвої фільтрації (вимога C8), комбінованою аналітикою (вимога F1) та відеотрансляцією з бару (вимога C15).</p>
 
         <!-- Панель фільтрації в реальному часі -->
         <div class="row mb-3">
@@ -67,7 +67,7 @@
         </div>
     </div>
 
-  <!-- Leaflet JS -->
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // Ініціалізація мапи (центр на Києві)
@@ -76,14 +76,56 @@
         // Підключення шару OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
         let markersLayer = L.layerGroup().addTo(map);
         let allShops = [];
         let statsChart = null;
 
-        // Функція для відображення маркерів на мапі
+        // Змінні для глобального керування WebRTC потоком камери
+        let localStream = null;
+
+        // Функція для керування WebRTC камерою безпосередньо з попапу мапи
+        async function toggleShopWebcam() {
+            const videoElement = document.getElementById('shopWebcamVideo');
+            const container = document.getElementById('shopWebcamContainer');
+            const btn = document.getElementById('webcamBtn');
+
+            if (!localStream) {
+                try {
+                    // Виклик низькорівневого WebRTC API для доступу до камери (Вимога С15)
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    if (videoElement) videoElement.srcObject = localStream;
+                    if (container) container.classList.remove('d-none');
+                    if (btn) {
+                        btn.innerText = 'Вимкнути камеру бару';
+                        btn.classList.replace('btn-dark', 'btn-danger');
+                    }
+                } catch (err) {
+                    alert('Не вдалося отримати доступ до веб-камери: ' + err.message);
+                }
+            } else {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                if (videoElement) videoElement.srcObject = null;
+                if (container) container.classList.add('d-none');
+                if (btn) {
+                    btn.innerText = '🔴 Жива камера баристу';
+                    btn.classList.replace('btn-danger', 'btn-dark');
+                }
+            }
+        }
+
+        // Зупинка камери при закритті попапу, щоб ресурси не зависали
+        map.on('popupclose', () => {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+        });
+
+        // Функція для відображення маркерів на мапі з інтегрованим WebRTC
         function displayMarkers(shops) {
             markersLayer.clearLayers();
 
@@ -95,7 +137,15 @@
                         <div style="padding: 4px;">
                             <h6 class="mb-1" style="font-weight: bold; color: #333;">${shop.name}</h6>
                             <p class="mb-2 text-muted shop-address" style="font-size: 13px;">📍 ${shop.address}</p>
-                            <a href="/shops/${shop.id}/menu" class="btn btn-sm btn-primary w-100 mt-1" style="color: white !important;">Переглянути меню</a>
+                            <a href="/shops/${shop.id}/menu" class="btn btn-sm btn-primary w-100 mb-2" style="color: white !important;">Переглянути меню</a>
+                            
+                            <!-- ВИМОГА С15: WebRTC Live Stream з бару -->
+                            <div class="border-top pt-2 mt-1 text-center">
+                                <button class="btn btn-sm btn-dark w-100 rounded-pill" id="webcamBtn" onclick="toggleShopWebcam()">🔴 Жива камера баристу</button>
+                                <div id="shopWebcamContainer" class="mt-2 d-none">
+                                    <video id="shopWebcamVideo" autoplay playsinline class="w-100 shadow-sm rounded-2" style="max-height: 150px; object-fit: cover; background: #000;"></video>
+                                </div>
+                            </div>
                         </div>
                     `);
 
@@ -207,13 +257,15 @@
             });
         }
 
-        // Завантаження даних кав'ярень через наш API
+        // Захищене завантаження даних кав'ярень через API
         fetch('/api/shops')
             .then(res => res.json())
-            .then(data => {
-                allShops = data;
+            .then(response => {
+                allShops = Array.isArray(response) ? response : (response.data || []);
                 displayMarkers(allShops);
-                renderMixedChart(allShops);
+                if (allShops.length > 0) {
+                    renderMixedChart(allShops);
+                }
             })
             .catch(err => console.error('Помилка завантаження кав\'ярень:', err));
 
