@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../server');
+const {app,  server } = require('../server');
 
 describe('C5: REST API & JSON CRUD Tests', () => {
 

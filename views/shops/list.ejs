@@ -166,6 +166,10 @@
             </a>
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <a href="/map" class="btn btn-success btn-sm px-3 shadow-sm">📊 Мапа та статистика</a>
+                <a href="/benchmark" class="btn btn-warning btn-sm px-3 shadow-sm fw-semibold">⚡ C10 Benchmark</a>
+                <a href="/dashboard" class="btn btn-info btn-sm px-3 shadow-sm fw-semibold text-dark">🎨 Спільна дошка</a>
+                <!-- ДОДАНО КНОПКУ МІНІ-ГРИ (ВИМОГА F6) -->
+                <a href="/game" class="btn btn-danger btn-sm px-3 shadow-sm fw-semibold text-white">🎮 Міні-гра (F6)</a>
                 <a href="/notes" class="btn btn-outline-primary btn-sm px-3 shadow-sm">📝 Notion Редактор</a>
                 <a href="/chat" class="btn btn-outline-dark btn-sm px-3 shadow-sm">🤖 AI Бариста</a>
                 <a href="/shops/create" class="btn btn-coffee btn-sm px-3 shadow-sm">➕ Додати кав'ярню</a>
@@ -301,6 +305,55 @@
             <p class="mb-0 text-muted small">© 2026 Zruchno Coffee News. Всі права захищені.</p>
         </div>
     </footer>
+
+    <!-- КЛІЄНТСЬКИЙ СКРИПТ WEBSOCKET (Вимога C10) -->
+    <script>
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
+
+        ws.onopen = () => {
+            console.log('🔗 WebSocket з’єднання з сервером успішно встановлено.');
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('📥 Отримано подію через WebSocket:', data);
+
+                if (data.message) {
+                    showNotification(data.message);
+                }
+            } catch (e) {
+                console.error('Помилка обробки повідомлення WebSocket:', e);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('❌ WebSocket з’єднання закрито.');
+        };
+
+        function showNotification(text) {
+            let container = document.getElementById('ws-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'ws-toast-container';
+                container.style.cssText = 'position: fixed; bottom: 25px; right: 25px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.style.cssText = 'background: #2C221E; color: #FAF7F2; padding: 12px 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px;';
+            toast.innerHTML = `<i class="bi bi-bell-fill text-warning"></i> <span>${text}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+    </script>
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../server'); 
+const {app, server } = require('../server');
 
 describe('Інтеграційні/Юніт тести для пункту C6 (Landing Page меню та деталей)', () => {
 

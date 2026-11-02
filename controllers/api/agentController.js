@@ -15,16 +15,16 @@ const chatWithAgent = async (req, res) => {
             return;
         }
 
-        res.write(`data: ${JSON.stringify({ type: 'status', content: '🧠 ШІ-агент аналізує наміри та категорії меню...' })}\n\n`);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        res.write(`data: ${JSON.stringify({ type: 'status', content: '🧠 ШІ-агент аналізує запит...' })}\n\n`);
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         const lowerMsg = message.toLowerCase();
 
-        let searchTerm = '';
+        let intentType = 'menu';
         let targetPrice = null;
         let priceOperator = '<=';
-        let intentType = 'menu';
 
+        // Визначаємо намір: шукаємо заклади чи позиції в меню
         if (
             lowerMsg.includes('кав\'ярн') ||
             lowerMsg.includes('адрес') ||
@@ -32,27 +32,30 @@ const chatWithAgent = async (req, res) => {
             lowerMsg.includes('заклад')
         ) {
             intentType = 'shop';
-            searchTerm = message.replace(/(знайди|список|покажи|напої|напій|чи є|чи маєте|у вас є|є у вас|мені|позиції|з|із|категорії|категорія|дешевше|дорожче|до|від|грн|гривень|\?|\!|\.|,|\d+)/gi, '').trim();
-        } else {
-            intentType = 'menu';
-            const priceMatch = message.match(/(\d+)/);
-            if (priceMatch) {
-                targetPrice = parseInt(priceMatch[1], 10);
-            }
+        }
 
+        // 1. Шукаємо ціну, якщо вона вказана в запиті (напр. "до 120 грн")
+        const priceMatch = message.match(/(\d+)/);
+        if (priceMatch) {
+            targetPrice = parseInt(priceMatch[1], 10);
             if (lowerMsg.includes('дорожче') || lowerMsg.includes('від') || lowerMsg.includes('>')) {
                 priceOperator = '>=';
             } else {
                 priceOperator = '<=';
             }
-
-            searchTerm = message.replace(/(знайди|список|покажи|напої|напій|чи є|чи маєте|у вас є|мені|позиції|з|із|категорії|категорія|дешевше|дорожче|до|від|грн|гривень|\d+)/gi, '').trim();
         }
 
-        const displayTerm = searchTerm || 'всі';
+        // 2. Очищаємо текст від пунктуації, цифр та загальних службових слів, 
+        // щоб залишити чистий пошуковий термін (напр. "какао", "лимонад")
+        let searchTerm = message
+            .replace(/[\?\!\.,]/g, '')
+            .replace(/\d+/g, '') // прибираємо числа (ціну)
+            .replace(/(що|є|дешевше|дорожче|грн|гривень|до|від|покажи|знайди|мені)/gi, '')
+            .trim();
+
         res.write(`data: ${JSON.stringify({
             type: 'status',
-            content: `🛠️ Tool Calling [query_database]: пошук (тип: ${intentType}, термін: "${displayTerm}")`
+            content: `🛠️ Tool Calling [query_database]: пошук (термін: "${searchTerm || 'всі'}", ціна: ${targetPrice ? priceOperator + ' ' + targetPrice : 'не вказано'})`
         })}\n\n`);
 
         let dbQuery = '';
@@ -62,13 +65,14 @@ const chatWithAgent = async (req, res) => {
             let conditions = [];
             let paramIndex = 1;
 
+            // Додаємо текстовий фільтр лише якщо користувач реально вказав що шукає (напр. "какао")
             if (searchTerm && searchTerm.length > 0) {
-                // Шукаємо за повним входженням терміну в назву, опис або категорію
                 conditions.push(`(m.name ILIKE $${paramIndex} OR m.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`);
                 queryParams.push(`%${searchTerm}%`);
                 paramIndex++;
             }
 
+            // Додаємо ціновий фільтр, якщо знайдено число
             if (targetPrice !== null) {
                 conditions.push(`m.price ${priceOperator} $${paramIndex}`);
                 queryParams.push(targetPrice);
@@ -88,14 +92,14 @@ const chatWithAgent = async (req, res) => {
         } else {
             dbQuery = `
                 SELECT name, address, description FROM shops 
-                WHERE name ILIKE $1 OR address ILIKE $1 
+                WHERE name ILIKE $1 OR address ILIKE $1 OR description ILIKE $1
                 LIMIT 5
             `;
-            queryParams = [`%${searchTerm || ''}%`];
+            queryParams = [`%${searchTerm}%`];
         }
 
         const dbResult = await db.query(dbQuery, queryParams);
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         let toolResultsText = '';
         if (dbResult.rows.length > 0) {
@@ -111,7 +115,7 @@ const chatWithAgent = async (req, res) => {
                 toolResultsText = ` Знайшов заклади: ${shopsList}.`;
             }
         } else {
-            toolResultsText = ' На жаль, за вашим запитом нічого не знайдено.';
+            toolResultsText = ` На жаль, за вашим запитом нічого не знайдено.`;
         }
 
         res.write(`data: ${JSON.stringify({ type: 'status', content: '✍️ Формую відповідь...' })}\n\n`);

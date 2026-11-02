@@ -1,14 +1,29 @@
-
 jest.mock('../models/db', () => ({
     query: jest.fn(),
 }));
 
-
 const request = require('supertest');
-const app = require('../server');
+const { app, server } = require('../server');
 const db = require('../models/db');
 
 describe('F2: Тестування AJAX-пошуку (Autocomplete API)', () => {
+
+    beforeAll((done) => {
+        // Запускаємо сервер на вільному порті перед тестами, якщо він ще не слухає
+        if (!server.listening) {
+            server.listen(0, done);
+        } else {
+            done();
+        }
+    });
+
+    afterAll((done) => {
+        if (server.listening) {
+            server.close(done); // Коректно закриваємо сервер після завершення тестів
+        } else {
+            done();
+        }
+    });
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -42,11 +57,17 @@ describe('F2: Тестування AJAX-пошуку (Autocomplete API)', () => 
     });
 
     test('3. Повинен повернути статус 500 при помилці бази даних', async () => {
+        // Тимчасово глушимо виведення помилки в консоль для цього тесту
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
         db.query.mockRejectedValueOnce(new Error('Database connection failed'));
 
         const response = await request(app).get('/api/categories/search?q=latte');
 
         expect(response.status).toBe(500);
         expect(response.body).toEqual({ error: 'Помилка сервера' });
+
+        // Відновлюємо стандартну поведінку консолі
+        consoleSpy.mockRestore();
     });
 });

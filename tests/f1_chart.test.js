@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../server'); // Шлях до твого сервера
+const { app, server } = require('../server');
 
 describe('F1: Statistics & Visualization Data API Tests', () => {
 
