@@ -245,7 +245,7 @@
                 <button class="btn-danger-custom" onclick="clearAll()">Очистити все</button>
             </div>
 
-            <!-- Контейнер неявного списку блоків -->
+            <!-- Контейнер блоків -->
             <div id="editorBlocks"></div>
         </div>
     </main>
@@ -257,6 +257,7 @@
 
         let activeIndex = 0;
         let draggedIndex = null;
+        let isRemoteUpdate = false; // Прапорець для запобігання зацикленню та збиванню фокуса
 
         // Завантажуємо актуальні дані з localStorage
         let blocks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
@@ -308,6 +309,7 @@
                 el.addEventListener('focus', () => { activeIndex = index; });
                 el.addEventListener('click', () => { activeIndex = index; });
 
+                // Під час введення тексту НЕ викликаємо render(), щоб не збивати курсор!
                 el.addEventListener('input', (e) => {
                     blocks[index].content = e.target.innerText;
                     activeIndex = index;
@@ -383,45 +385,64 @@
             setTimeout(() => {
                 saveStatus.innerText = 'Збережено в localStorage';
             }, 1000);
-        }
 
-        // ==========================================
-        // СИНХРОНІЗАЦІЯ (С13) ТА ВІЗУАЛІЗАЦІЯ (С14)
-        // ==========================================
-        function handleRemoteUpdate(newJsonData) {
-            const parsed = JSON.parse(newJsonData);
-            if (JSON.stringify(parsed) !== JSON.stringify(blocks)) {
-                blocks = parsed;
-                render();
-
-                // Візуалізація змін у динаміці (Вимога С14)
-                const rows = editorContainer.querySelectorAll('.notion-row');
-                rows.forEach(row => {
-                    row.classList.add('sync-animated');
-                    setTimeout(() => {
-                        row.classList.remove('sync-animated');
-                    }, 1200);
-                });
-
-                saveStatus.innerText = 'Синхронізовано!';
-                setTimeout(() => {
-                    saveStatus.innerText = 'Збережено в localStorage';
-                }, 1500);
+            // Якщо оновлення зроблені локально — надсилаємо на інші пристрої через WebSocket (С13)
+            if (!isRemoteUpdate && typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'NOTION_UPDATE',
+                    data: JSON.stringify(blocks)
+                }));
             }
         }
 
-        window.addEventListener('storage', (event) => {
-            if (event.key === STORAGE_KEY && event.newValue) {
-                handleRemoteUpdate(event.newValue);
-            }
-        });
+        // ==========================================
+        // СИНХРОНІЗАЦІЯ ЧЕРЕЗ WEBSOCKET (С13) ТА ВІЗУАЛІЗАЦІЯ (С14)
+        // ==========================================
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
 
-        window.addEventListener('focus', () => {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                handleRemoteUpdate(savedData);
+        ws.onopen = () => {
+            console.log('🔗 WebSocket з’єднання з сервером редактора встановлено.');
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const messageData = JSON.parse(event.data);
+                
+                if (messageData.type === 'NOTION_UPDATE') {
+                    const parsed = JSON.parse(messageData.data);
+                    
+                    if (JSON.stringify(parsed) !== JSON.stringify(blocks)) {
+                        isRemoteUpdate = true; // Вмикаємо прапорець зовнішнього оновлення
+                        blocks = parsed;
+                        localStorage.setItem(STORAGE_KEY, messageData.data);
+                        render();
+
+                        // Візуалізація змін у динаміці (Вимога С14: плавна підсвітка)
+                        const rows = editorContainer.querySelectorAll('.notion-row');
+                        rows.forEach(row => {
+                            row.classList.add('sync-animated');
+                            setTimeout(() => {
+                                row.classList.remove('sync-animated');
+                            }, 1200);
+                        });
+
+                        saveStatus.innerText = 'Синхронізовано з іншим пристроєм!';
+                        setTimeout(() => {
+                            saveStatus.innerText = 'Збережено в localStorage';
+                            isRemoteUpdate = false; // Вимикаємо прапорець
+                        }, 1500);
+                    }
+                }
+            } catch (e) {
+                console.error('Помилка обробки WebSocket повідомлення:', e);
+                isRemoteUpdate = false;
             }
-        });
+        };
+
+        ws.onclose = () => {
+            console.log('❌ WebSocket з’єднання закрито.');
+        };
 
         render();
     </script>

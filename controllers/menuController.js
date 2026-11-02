@@ -24,7 +24,6 @@ exports.getShopMenu = async (req, res) => {
 
         menuQuery += ' ORDER BY id DESC';
 
-        // Використовуємо правильну змінну menuQuery та параметри
         const menuResult = await db.query(menuQuery, queryParams);
 
         res.render('menu/list', {
@@ -43,13 +42,17 @@ exports.addMenuItem = async (req, res) => {
     const shopId = req.params.shopId;
     const { category_id, name, description, price, image_url } = req.body;
 
+    // Безпечне перетворення: якщо category_id порожній, ставимо null, а price переводимо у число
+    const finalCategoryId = category_id && category_id !== '' ? parseInt(category_id, 10) : null;
+    const finalPrice = price ? parseFloat(price) : 0;
+
     const query = `
         INSERT INTO menu_items (shop_id, category_id, name, description, price, image_url) 
         VALUES ($1, $2, $3, $4, $5, $6)
     `;
 
     try {
-        await db.query(query, [shopId, category_id, name, description, price, image_url]);
+        await db.query(query, [shopId, finalCategoryId, name, description, finalPrice, image_url || '']);
         res.redirect(`/shops/${shopId}/menu`);
     } catch (err) {
         console.error(err);
@@ -87,11 +90,13 @@ exports.updateMenuItem = async (req, res) => {
     }
 
     try {
-        // Перевіряємо, чи існує такий товар перед оновленням
         const checkItem = await db.query('SELECT * FROM menu_items WHERE id = $1 AND shop_id = $2', [itemId, shopId]);
         if (checkItem.rows.length === 0) {
             return res.status(404).send("Позицію меню не знайдено для оновлення");
         }
+
+        const finalCategoryId = category_id && category_id !== '' ? parseInt(category_id, 10) : null;
+        const finalPrice = parseFloat(price);
 
         const query = `
             UPDATE menu_items 
@@ -99,13 +104,12 @@ exports.updateMenuItem = async (req, res) => {
             WHERE id = $6
         `;
 
-        await db.query(query, [category_id, name, description, price, image_url, itemId]);
+        await db.query(query, [finalCategoryId, name, description, finalPrice, image_url || '', itemId]);
         res.redirect(`/shops/${shopId}/menu`);
     } catch (err) {
         console.error(err);
         res.status(500).send("Помилка при оновленні: " + err.message);
     }
-    
 };
 
 exports.deleteMenuItem = async (req, res) => {

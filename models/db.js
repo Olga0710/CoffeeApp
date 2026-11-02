@@ -63,8 +63,10 @@ const initDb = async () => {
         await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS latitude NUMERIC(9, 6) DEFAULT 50.4501;`);
         await pool.query(`ALTER TABLE shops ADD COLUMN IF NOT EXISTS longitude NUMERIC(9, 6) DEFAULT 30.5234;`);
         await pool.query(`ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS category_id INTEGER;`);
-
-        console.log('Таблиці успішно створені або вже існують у PostgreSQL.');
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Таблиці успішно створені або вже існують у PostgreSQL.');
+        }
+       
     } catch (err) {
         console.error('ПОМИЛКА створення таблиць у БД:', err);
     }

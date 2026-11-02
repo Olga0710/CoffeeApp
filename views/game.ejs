@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zruchno Coffee - Кавова міні-гра (F6)</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-cream: #FAF7F2;
+            --coffee-dark: #2C221E;
+            --coffee-primary: #C87D55;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-cream);
+            color: var(--coffee-dark);
+            padding-top: 40px;
+            text-align: center;
+        }
+
+        .game-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(44, 34, 30, 0.08);
+            border: 1px solid rgba(200, 125, 85, 0.2);
+        }
+
+        canvas {
+            background: #2C221E;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: block;
+            margin: 20px auto;
+        }
+
+        .btn-coffee {
+            background-color: var(--coffee-primary);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            padding: 8px 20px;
+            transition: background 0.2s;
+        }
+
+        .btn-coffee:hover {
+            background-color: #B26B45;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="game-container">
+            <a href="/shops" class="btn btn-outline-secondary btn-sm mb-3 float-start">
+                <i class="bi bi-arrow-left"></i> На головну
+            </a>
+            <div class="clearfix"></div>
+
+            <h2 class="fw-bold mb-1">☕ Злови кавове зернятко!</h2>
+            <p class="text-muted small mb-3">Використовуйте стрілки <b>←</b> та <b>→</b> на клавіатурі для керування чашкою.</p>
+
+            <canvas id="gameCanvas" width="550" height="400"></canvas>
+
+            <div id="gameOverScreen" class="d-none mt-3">
+                <h4 class="text-danger fw-bold">Гра закінчена!</h4>
+                <p class="mb-2">Ваш фінальний рахунок: <span id="finalScore" class="fw-bold">0</span></p>
+                <button onclick="restartGame()" class="btn btn-coffee">Спробувати знову</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreSpan = document.getElementById('finalScore');
+
+        let cupX = 225;
+        let beanX = Math.random() * 510;
+        let beanY = 0;
+        let score = 0;
+        let lives = 3;
+        let speed = 3.5;
+        let isGameOver = false;
+
+        // Керування стрілками
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) return;
+            if (e.key === 'ArrowLeft' && cupX > 10) {
+                cupX -= 30;
+            } else if (e.key === 'ArrowRight' && cupX < 440) {
+                cupX += 30;
+            }
+        });
+
+        function update() {
+            if (isGameOver) return;
+
+            beanY += speed;
+
+            // Перевірка падіння зернятка нижче чашки (втрата життя)
+            if (beanY > 390) {
+                lives--;
+                if (lives <= 0) {
+                    isGameOver = true;
+                    finalScoreSpan.innerText = score;
+                    gameOverScreen.classList.remove('d-none');
+                } else {
+                    resetBean();
+                }
+            }
+
+            // Перевірка лову зернятка чашкою
+            if (beanY >= 330 && beanY <= 360 && beanX >= cupX - 10 && beanX <= cupX + 90) {
+                score++;
+                speed += 0.15; // Збільшуємо складність з кожним очком
+                resetBean();
+            }
+        }
+
+        function resetBean() {
+            beanY = 0;
+            beanX = Math.random() * 510;
+        }
+
+        function draw() {
+            // Очищення екрана
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!isGameOver) {
+                // Малюємо кавове зернятко
+                ctx.fillStyle = '#E8A87C';
+                ctx.beginPath();
+                ctx.arc(beanX + 15, beanY + 10, 10, 0, Math.PI * 2);
+                ctx.fill();
+                // Деталь зернятка (поздовжня лінія)
+                ctx.strokeStyle = '#2C221E';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(beanX + 15, beanY + 4);
+                ctx.lineTo(beanX + 15, beanY + 16);
+                ctx.stroke();
+
+                // Малюємо чашку кави
+                ctx.fillStyle = '#C87D55';
+                ctx.fillRect(cupX, 340, 90, 45); // Основна частина
+                ctx.fillStyle = '#FAF7F2';
+                ctx.fillRect(cupX + 8, 330, 74, 10); // Блюдце/край
+                // Ручка чашки
+                ctx.strokeStyle = '#C87D55';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.arc(cupX + 90, 355, 10, -Math.PI/2, Math.PI/2);
+                ctx.stroke();
+
+                // Виведення рахунку та життів на Canvas
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '16px "Plus Jakarta Sans", sans-serif';
+                ctx.fillText(`Рахунок: ${score}`, 20, 30);
+                ctx.fillText(`Життя: ${'❤️ '.repeat(lives)}`, 400, 30);
+            }
+        }
+
+        function loop() {
+            update();
+            draw();
+            if (!isGameOver) {
+                requestAnimationFrame(loop);
+            }
+        }
+
+        function restartGame() {
+            cupX = 225;
+            score = 0;
+            lives = 3;
+            speed = 3.5;
+            isGameOver = false;
+            gameOverScreen.classList.add('d-none');
+            resetBean();
+            loop();
+        }
+
+        // Запуск гри
+        loop();
+    </script>
+</body>
+</html>

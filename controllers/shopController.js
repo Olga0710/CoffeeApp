@@ -1,7 +1,5 @@
 const db = require('../models/db');
 
-
-
 exports.getAllShops = async (req, res) => {
     try {
         const result = await db.query('SELECT * FROM shops ORDER BY id ASC');
@@ -21,7 +19,6 @@ exports.getCreateShopForm = async (req, res) => {
     }
 };
 
-
 exports.createShop = async (req, res) => {
     const { name, description, address, opening_hours, image_url, latitude, longitude } = req.body;
     try {
@@ -32,7 +29,7 @@ exports.createShop = async (req, res) => {
             try {
                 const queryUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Kyiv, Ukraine')}`;
                 const response = await fetch(queryUrl, {
-                    headers: { 'User-Agent': 'ZruchnoCoffeeApp' } // 
+                    headers: { 'User-Agent': 'ZruchnoCoffeeApp' }
                 });
                 const geoData = await response.json();
 
@@ -45,29 +42,25 @@ exports.createShop = async (req, res) => {
             }
         }
 
-        // Якщо і адресу не знайшлося / не ввели, ставимо центр Києва за замовчуванням
         finalLat = finalLat ? parseFloat(finalLat) : 50.4501;
         finalLon = finalLon ? parseFloat(finalLon) : 30.5234;
 
         await db.query(
-
             'INSERT INTO shops (name, description, address, opening_hours, image_url, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [
                 name,
                 description,
                 address,
                 opening_hours,
-                image_url,
-                finalLat,   
+                image_url || '',
+                finalLat,
                 finalLon
             ]
         );
 
-        
-
         try {
-            const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E'; 
-            const chatId = '1111023157';       
+            const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E';
+            const chatId = '1111023157';
 
             const message = `☕ Нова кав'ярня успішно додана до мережі!\n\n📍 Назва: ${name}\n🏠 Адреса: ${address || 'Не вказана'}\n⏰ Години: ${opening_hours || 'Не вказані'}`;
 
@@ -127,12 +120,15 @@ exports.updateShop = async (req, res) => {
             }
         }
 
-        // Якщо координати таки не вдалося знайти, спробуємо взяти старі з бази або залишити дефолтні
         if (!finalLat || !finalLon) {
             const oldShop = await db.query('SELECT latitude, longitude FROM shops WHERE id = $1', [shopId]);
             finalLat = oldShop.rows[0]?.latitude || 50.4501;
-            finalLon = oldShop.rows[0]?.longitude || 30.5234;        }
+            finalLon = oldShop.rows[0]?.longitude || 30.5234;
+        }
 
+        const finalImageUrl = image_url || '';
+
+        // Виправлено: тепер тут рівно 8 параметрів, включно з finalImageUrl та shopId в кінці
         await db.query(
             'UPDATE shops SET name = $1, description = $2, address = $3, opening_hours = $4, image_url = $5, latitude = $6, longitude = $7 WHERE id = $8',
             [
@@ -140,13 +136,12 @@ exports.updateShop = async (req, res) => {
                 description,
                 address,
                 opening_hours,
-                image_url,
+                finalImageUrl,
                 finalLat,
                 finalLon,
                 shopId
             ]
         );
-
 
         try {
             const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E';
@@ -174,8 +169,6 @@ exports.deleteShop = async (req, res) => {
     try {
         await db.query('DELETE FROM shops WHERE id = $1', [shopId]);
 
-       
-
         try {
             const botToken = '8944205616:AAGw9MkHndfli-_jgb7ke9M3BKz0lHk5B5E';
             const chatId = '1111023157';
@@ -184,7 +177,10 @@ exports.deleteShop = async (req, res) => {
             await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: chatId, text: message })
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message
+                })
             });
         } catch (tgErr) {
             console.error("Помилка відправки в Telegram:", tgErr);
@@ -195,18 +191,14 @@ exports.deleteShop = async (req, res) => {
         res.status(500).send("Помилка при видаленні: " + err.message);
     }
 };
+
 exports.getShopsApi = async (req, res) => {
-   
     try {
-        
         const result = await db.query('SELECT id, name, address, description, image_url, latitude, longitude FROM shops ORDER BY id DESC');
         const shops = result.rows;
-
-       
+        res.json(shops);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Помилка при отриманні даних для мапи" });
     }
 };
-
-
