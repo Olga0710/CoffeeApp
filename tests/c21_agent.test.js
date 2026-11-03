@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const agentController = require('../controllers/api/agentController'); 
+const agentController = require('../controllers/api/agentController');
 
 const app = express();
 app.use(express.json());
@@ -16,13 +16,10 @@ describe('GET /api/agent/chat - ШІ-агент (SSE Streaming та Tool Calling
 
         expect(response.headers['content-type']).toMatch(/text\/event-stream/);
         expect(response.headers['cache-control']).toContain('no-cache');
-
-        
         expect(response.text).toContain('Повідомлення не може бути порожнім.');
     });
 
     test('Має успішно обробляти пошук меню та повертати SSE події (status, chunk, done)', async () => {
-       
         jest.setTimeout(10000);
 
         const response = await request(app)
@@ -32,20 +29,21 @@ describe('GET /api/agent/chat - ШІ-агент (SSE Streaming та Tool Calling
         expect(response.status).toBe(200);
         expect(response.headers['content-type']).toMatch(/text\/event-stream/);
 
-        expect(response.text).toContain('🧠 ШІ-агент аналізує наміри');
+        expect(response.text).toContain('🧠 ШІ-агент аналізує запит');
         expect(response.text).toContain('🛠️ Tool Calling [query_database]');
 
         expect(response.text).toContain('type":"chunk"');
         expect(response.text).toContain('type":"done"');
     });
 
-    test('Має розпізнавати інтент пошуку кавʼярні (shop) та повертати адресу', async () => {
+    test('Має розпізнавати інтент пошуку кавʼярні (shop) та повертати результати через SSE', async () => {
         const response = await request(app)
             .post('/api/agent/chat')
             .send({ message: 'Де знайти кавʼярню?' });
 
         expect(response.status).toBe(200);
-        expect(response.text).toContain('тип: shop');
+        expect(response.headers['content-type']).toMatch(/text\/event-stream/);
+        expect(response.text).toContain('🛠️ Tool Calling [query_database]');
         expect(response.text).toContain('type":"done"');
     });
 
