@@ -24,7 +24,6 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         try {
             const data = JSON.parse(message);
-            // Ретранслюємо подію (малювання/дії) всім іншим підключеним клієнтам
             clients.forEach((client) => {
                 if (client !== ws && client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify(data));
@@ -68,7 +67,7 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// --- НАЛАШТУВАННЯ OAUTH2 АВТЕНТИФІКАЦІЇ (Вимога C16) ---
+// НАЛАШТУВАННЯ OAUTH2 АВТЕНТИФІКАЦІЇ
 app.use(session({
     secret: 'zruchno_coffee_secret_key',
     resave: false,
@@ -80,14 +79,12 @@ app.use(passport.session());
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET',
-    callbackURL: 'http://localhost:3000/auth/google/callback'
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
 },
     async (accessToken, refreshToken, profile, done) => {
         const email = profile.emails && profile.emails[0] ? profile.emails[0].value : '';
 
-        // FEATURE FLAG / РІВЕНЬ ДОСТУПУ (Вимога B6):
-        // Перевіряємо чи користувач має преміум-права (можна змінити пошту під себе або залишити true для тесту)
-        // Якщо пошта містить 'admin' або совпала з вашою — тоді true, інакше false
+        // FEATURE FLAG 
         const isPremiumUser = email === 'olga.berezhnaya20006@gmail.com' || email.includes('admin');
 
         const user = {
