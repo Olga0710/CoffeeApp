@@ -34,7 +34,7 @@ const chatWithAgent = async (req, res) => {
             intentType = 'shop';
         }
 
-        // 1. Шукаємо ціну, якщо вона вказана в запиті (напр. "до 120 грн")
+        // 1. Шукаємо ціну в запиті (напр. "до 100 грн")
         const priceMatch = message.match(/(\d+)/);
         if (priceMatch) {
             targetPrice = parseInt(priceMatch[1], 10);
@@ -45,13 +45,18 @@ const chatWithAgent = async (req, res) => {
             }
         }
 
-        // 2. Очищаємо текст від пунктуації, цифр та загальних службових слів, 
-        // щоб залишити чистий пошуковий термін (напр. "какао", "лимонад")
+        // 2. Очищаємо текст від зайвих слів
         let searchTerm = message
             .replace(/[\?\!\.,]/g, '')
-            .replace(/\d+/g, '') // прибираємо числа (ціну)
+            .replace(/\d+/g, '')
             .replace(/(що|є|дешевше|дорожче|грн|гривень|до|від|покажи|знайди|мені)/gi, '')
             .trim();
+
+        // 💡 Логіка виключення: якщо шукаємо напій, виключаємо десерти
+        let excludeCategory = null;
+        if (lowerMsg.includes('какао') || lowerMsg.includes('кава') || lowerMsg.includes('чай') || lowerMsg.includes('лате') || lowerMsg.includes('капучино') || lowerMsg.includes('лимонад')) {
+            excludeCategory = 'Десерти';
+        }
 
         res.write(`data: ${JSON.stringify({
             type: 'status',
@@ -65,14 +70,20 @@ const chatWithAgent = async (req, res) => {
             let conditions = [];
             let paramIndex = 1;
 
-            // Додаємо текстовий фільтр лише якщо користувач реально вказав що шукає (напр. "какао")
             if (searchTerm && searchTerm.length > 0) {
+                // Шукаємо по назві позиції, опису або категорії
                 conditions.push(`(m.name ILIKE $${paramIndex} OR m.description ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex})`);
                 queryParams.push(`%${searchTerm}%`);
                 paramIndex++;
             }
 
-            // Додаємо ціновий фільтр, якщо знайдено число
+            // Якщо потрібно виключити десерти
+            if (excludeCategory) {
+                conditions.push(`(c.name NOT ILIKE $${paramIndex} OR c.name IS NULL)`);
+                queryParams.push(`%${excludeCategory}%`);
+                paramIndex++;
+            }
+
             if (targetPrice !== null) {
                 conditions.push(`m.price ${priceOperator} $${paramIndex}`);
                 queryParams.push(targetPrice);
@@ -87,12 +98,16 @@ const chatWithAgent = async (req, res) => {
                 JOIN shops s ON m.shop_id = s.id 
                 LEFT JOIN categories c ON m.category_id = c.id
                 ${whereClause} 
+                ORDER BY CASE WHEN m.name ILIKE $${queryParams.length + 1} THEN 1 ELSE 2 END, m.price ASC
                 LIMIT 5
             `;
+            if (searchTerm) {
+                queryParams.push(`%${searchTerm}%`);
+            }
         } else {
             dbQuery = `
                 SELECT name, address, description FROM shops 
-                WHERE name ILIKE $1 OR address ILIKE $1 OR description ILIKE $1
+                WHERE name ILIKE $1 OR address ILIKE $1 
                 LIMIT 5
             `;
             queryParams = [`%${searchTerm}%`];
@@ -105,14 +120,14 @@ const chatWithAgent = async (req, res) => {
         if (dbResult.rows.length > 0) {
             if (intentType === 'menu') {
                 const itemsList = dbResult.rows
-                    .map(m => `«${m.item_name}» [${m.category_name || 'Меню'}] — ${m.price} грн у закладі "${m.shop_name}" (${m.address})`)
-                    .join('; ');
-                toolResultsText = ` Знайшов у каталозі: ${itemsList}.`;
+                    .map(m => `• «${m.item_name}» [${m.category_name || 'Меню'}] — ${m.price} грн\n  📍 ${m.shop_name} (${m.address})`)
+                    .join('\n\n');
+                toolResultsText = `\n\nЗнайшов у каталозі:\n\n${itemsList}`;
             } else {
                 const shopsList = dbResult.rows
-                    .map(s => `«${s.name}» (адреса: ${s.address})`)
-                    .join(', ');
-                toolResultsText = ` Знайшов заклади: ${shopsList}.`;
+                    .map(s => `• «${s.name}» — адреса: ${s.address}`)
+                    .join('\n');
+                toolResultsText = `\n\nЗнайшов заклади:\n${shopsList}`;
             }
         } else {
             toolResultsText = ` На жаль, за вашим запитом нічого не знайдено.`;
@@ -121,13 +136,13 @@ const chatWithAgent = async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: 'status', content: '✍️ Формую відповідь...' })}\n\n`);
         await new Promise(resolve => setTimeout(resolve, 200));
 
-        const baseReply = `Привіт! Я ваш ШІ-бариста ZruchnoCoffee.${toolResultsText} Чим ще можу допомогти?`;
+        const baseReply = `Привіт! Я ваш ШІ-бариста ZruchnoCoffee.${toolResultsText}\n\nЧим ще можу допомогти?`;
 
         const words = baseReply.split(' ');
         for (let i = 0; i < words.length; i++) {
             const chunkText = words[i] + ' ';
             res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunkText })}\n\n`);
-            await new Promise(resolve => setTimeout(resolve, 25));
+            await new Promise(resolve => setTimeout(resolve, 20));
         }
 
         res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
